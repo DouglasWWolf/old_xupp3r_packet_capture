@@ -30,4 +30,4 @@ test "$1" !=  "" && count=$1
 # Dump packets to disk from both channels
 #
 sudo ../software/build/getpackets -ch 0 $count
-#getpackets -ch 1 $count
+sudo ../software/build/getpackets -ch 1 $count
