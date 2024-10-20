@@ -41,9 +41,6 @@ module sys_control
     input  bank2_erase_idle_async,
     input  bank3_erase_idle_async,
 
-    // This is the AXI address that PCIe BAR1 maps to
-    output reg [63:0] window_addr,
-
     // The "up and aligned" status of the QSFP ports
     input   qsfp0_status_async,
     input   qsfp1_status_async,
@@ -89,25 +86,22 @@ module sys_control
 // Include the constants that define our RAM configuration
 `include "geometry.vh"
 
-// Any time the register map of this module changes, this number should
-// be bumped
-localparam MODULE_VERSION = 1;
-
 
 //=========================  AXI Register Map  =============================
-localparam REG_MODULE_REV   =  0;
-localparam REG_CAPTURE      =  1;
-localparam REG_WINDOW_ADDRH =  2;
-localparam REG_WINDOW_ADDRL =  3;
-localparam REG_STATUS       =  4;
-localparam REG_BANK_SIZEH   =  5;
-localparam REG_BANK_SIZEL   =  6;
-localparam REG_BANK0_ADDRH  =  7;
-localparam REG_BANK0_ADDRL  =  8;
-localparam REG_BANK1_ADDRH  =  9;
-localparam REG_BANK1_ADDRL  = 10;
-localparam REG_TS_FREQ      = 11;
-localparam REG_ETH_RESETN   = 12;
+localparam REG_CAPTURE      =  0;
+localparam REG_STATUS       =  1;
+localparam REG_BANK_SIZEH   =  2;
+localparam REG_BANK_SIZEL   =  3;
+localparam REG_BANK0_ADDRH  =  4;
+localparam REG_BANK0_ADDRL  =  5;
+localparam REG_BANK1_ADDRH  =  6;
+localparam REG_BANK1_ADDRL  =  7;
+localparam REG_BANK2_ADDRH  =  8;
+localparam REG_BANK2_ADDRL  =  9;
+localparam REG_BANK3_ADDRH  = 10;
+localparam REG_BANK3_ADDRL  = 11;
+localparam REG_TS_FREQ      = 12;
+localparam REG_ETH_RESETN   = 13;
 //==========================================================================
 
 
@@ -214,7 +208,6 @@ always @(posedge clk) begin
     // If we're in reset, initialize important registers
     if (resetn == 0) begin
         ashi_write_state  <= 0;
-        window_addr       <= 0;
         eth_resetn_out    <= 1;
 
     // If we're not in reset, and a write-request has occured...        
@@ -233,8 +226,6 @@ always @(posedge clk) begin
                                         else
                                             stop_capture  <= 1;
 
-                    REG_WINDOW_ADDRH:   window_addr[63:32] <= ashi_wdata;
-                    REG_WINDOW_ADDRL:   window_addr[31:00] <= ashi_wdata;
                     REG_ETH_RESETN:     eth_resetn_out     <= ashi_wdata[0];
 
                     // Writes to any other register are a decode-error
@@ -271,17 +262,24 @@ always @(posedge clk) begin
         case (ashi_rindx)
             
             // Allow a read from any valid register                
-            REG_MODULE_REV:     ashi_rdata <= MODULE_VERSION;
             REG_CAPTURE:        ashi_rdata <= 0;
-            REG_WINDOW_ADDRH:   ashi_rdata <= window_addr[63:32];
-            REG_WINDOW_ADDRL:   ashi_rdata <= window_addr[31:00];
             REG_STATUS:         ashi_rdata <= status_word;
+
             REG_BANK_SIZEH:     ashi_rdata <= RAM_BANK_SIZE[63:32];
             REG_BANK_SIZEL:     ashi_rdata <= RAM_BANK_SIZE[31:00];
+
             REG_BANK0_ADDRH:    ashi_rdata <= BANK0_BASE_ADDR[63:32];
             REG_BANK0_ADDRL:    ashi_rdata <= BANK0_BASE_ADDR[31:00];
+
             REG_BANK1_ADDRH:    ashi_rdata <= BANK1_BASE_ADDR[63:32];
             REG_BANK1_ADDRL:    ashi_rdata <= BANK1_BASE_ADDR[31:00];
+
+            REG_BANK2_ADDRH:    ashi_rdata <= BANK2_BASE_ADDR[63:32];
+            REG_BANK2_ADDRL:    ashi_rdata <= BANK2_BASE_ADDR[31:00];
+
+            REG_BANK3_ADDRH:    ashi_rdata <= BANK3_BASE_ADDR[63:32];
+            REG_BANK3_ADDRL:    ashi_rdata <= BANK3_BASE_ADDR[31:00];
+
             REG_TS_FREQ:        ashi_rdata <= RAM_CLOCK_FREQ;
 
             // Because we are a 32-bit slave on a 512-bit bus, every

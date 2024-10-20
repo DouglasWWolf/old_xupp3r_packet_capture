@@ -1,0 +1,13 @@
+if [ $(pcireg -dec 20) -ne 642024 ]; then
+    echo "The packet_capture bitstream is not loaded into the FPGA!"
+    exit
+fi
+
+
+REG_ETH_RESETN=$((0x1000 + 13 * 4))
+
+pcireg $REG_ETH_RESETN 0
+sleep .001
+pcireg $REG_ETH_RESETN 1
+
+   

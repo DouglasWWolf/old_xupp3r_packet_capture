@@ -81,8 +81,10 @@ module fill_ram #
 `include "geometry.vh"
 
 // Determine the base address of our bank of RAM
-localparam[63:0] BASE_ADDR = (CHANNEL==0) ? BANK0_BASE_ADDR : BANK1_BASE_ADDR;
-
+localparam[63:0] BASE_ADDR = (CHANNEL==0) ? BANK0_BASE_ADDR: 
+                             (CHANNEL==1) ? BANK1_BASE_ADDR:
+                             (CHANNEL==2) ? BANK2_BASE_ADDR:
+                             (CHANNEL==3) ? BANK3_BASE_ADDR: 0;
 
 // Synchronize "start_async" into "start"
 wire start;

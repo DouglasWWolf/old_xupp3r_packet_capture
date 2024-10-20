@@ -17,7 +17,7 @@ fi
 #
 # Force unflushed packets to be flushed to RAM 
 #
-pcireg 0x1004 0
+pcireg 0x1000 0
 sleep .1
 
 #
@@ -29,5 +29,7 @@ test "$1" !=  "" && count=$1
 #
 # Dump packets to disk from both channels
 #
-sudo ../software/build/getpackets -ch 0 $count
-sudo ../software/build/getpackets -ch 1 $count
+../software/build/getpackets -ch 0 $count
+../software/build/getpackets -ch 1 $count
+../software/build/getpackets -ch 2 $count
+../software/build/getpackets -ch 3 $count

@@ -1,6 +1,9 @@
 localparam[63:0] RAM_BANK_SIZE        = 64'h04_0000_0000;
 localparam[63:0] BANK0_BASE_ADDR      = 64'h10_0000_0000;
 localparam[63:0] BANK1_BASE_ADDR      = 64'h20_0000_0000;
+localparam[63:0] BANK2_BASE_ADDR      = 64'h30_0000_0000;
+localparam[63:0] BANK3_BASE_ADDR      = 64'h40_0000_0000;
+
 
 // Clock frequency of the units that our timestamps are reported in
 localparam       RAM_CLOCK_FREQ = 300000000;

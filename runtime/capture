@@ -10,8 +10,8 @@ if [ $(pcireg -dec 20) -ne 642024 ]; then
 fi
 
 if [ "$1" == "stop" ]; then
-    pcireg 0x1004 0
+    pcireg 0x1000 0
 else
-    pcireg 0x1004 1
+    pcireg 0x1000 1
 fi
 
