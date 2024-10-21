@@ -1,0 +1,71 @@
+REG_BASE=0x1000
+   REG_CAPTURE=$((REG_BASE + 0 * 4))
+    REG_STATUS=$((REG_BASE + 1 * 4))
+REG_ETH_RESETN=$((REG_BASE + 2 * 4))
+  REG_OVERFLOW=$((REG_BASE + 3 * 4))
+
+# Ensure that the sniffer RTL design is loaded into the FPGA
+if [ $(pcireg -dec 20) -ne 10202024 ]; then
+    echo "The packet_capture bitstream is not loaded into the FPGA!"
+    exit
+fi
+
+# Are we starting a capture?
+if [ "$1" == "capture" ] || [ "$1" == "start" ]; then
+    pcireg $REG_CAPTURE 1
+    exit 0
+fi
+
+# Are we stopping a capture?
+if [ "$1" == "stop" ]; then
+    pcireg $REG_CAPTURE 0
+    exit 0
+fi
+
+# Are we resetting the entire Ethernet system?
+if [ "$1" == "eth_reset" ]; then
+   pcireg $REG_ETH_RESETN 0
+   sleep .001
+   pcireg $REG_ETH_RESETN 1
+   exit 0
+fi
+
+# Are we displaying the RAM & PCS status?
+if [ "$1" == "status" ]; then
+    pcireg -dec $REG_STATUS
+    exit 0
+fi
+
+# Are we displaying the overflow status?
+if [ "$1" == "overflow" ]; then
+    pcireg -dec $REG_OVERFLOW
+    exit 0
+fi
+
+# Are we dumping packets?
+if [ "$1" == "dump" ]; then
+
+    # Force unflushed packets to be flushed to RAM 
+    pcireg $REG_CAPTURE 0
+    sleep .1
+
+    # Determine how many packets to dump out
+    count=5000
+    test "$2" !=  "" && count=$2 
+
+    # Dump packets to disk from both channels
+    p3r_getpackets -ch 0 $count
+    p3r_getpackets -ch 1 $count
+    p3r_getpackets -ch 2 $count
+    p3r_getpackets -ch 3 $count
+
+    exit 0
+fi
+
+
+echo "usage:  sniffer start"
+echo "        sniffer stop"
+echo "        sniffer dump [packet_count]"
+echo "        sniffer eth_reset"
+echo "        sniffer overflow"
+echo "        sniffer status"

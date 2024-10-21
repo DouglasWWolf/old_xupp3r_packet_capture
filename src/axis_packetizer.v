@@ -19,7 +19,7 @@
 
 */
 
-module axis_packetizer # (parameter DW=512, FIFO_DEPTH=1024)
+module axis_packetizer # (parameter DW=512, FIFO_DEPTH=2048)
 (
 
     (* X_INTERFACE_INFO      = "xilinx.com:signal:clock:1.0 s_axis_aclk CLK"                  *)

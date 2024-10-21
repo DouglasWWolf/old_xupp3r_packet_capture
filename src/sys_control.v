@@ -41,11 +41,17 @@ module sys_control
     input  bank2_erase_idle_async,
     input  bank3_erase_idle_async,
 
+    // When these are asserted, packets arrived faster than could emit re-emit them
+    input  qsfp0_overflow_async,
+    input  qsfp1_overflow_async,
+    input  qsfp2_overflow_async,
+    input  qsfp3_overflow_async,
+
     // The "up and aligned" status of the QSFP ports
-    input   qsfp0_status_async,
-    input   qsfp1_status_async,
-    input   qsfp2_status_async,
-    input   qsfp3_status_async,
+    input  qsfp0_status_async,
+    input  qsfp1_status_async,
+    input  qsfp2_status_async,
+    input  qsfp3_status_async,
 
     // Drives the (active low) LEDs
     output [3:0] led_l,
@@ -88,20 +94,21 @@ module sys_control
 
 
 //=========================  AXI Register Map  =============================
-localparam REG_CAPTURE      =  0;
-localparam REG_STATUS       =  1;
-localparam REG_BANK_SIZEH   =  2;
-localparam REG_BANK_SIZEL   =  3;
-localparam REG_BANK0_ADDRH  =  4;
-localparam REG_BANK0_ADDRL  =  5;
-localparam REG_BANK1_ADDRH  =  6;
-localparam REG_BANK1_ADDRL  =  7;
-localparam REG_BANK2_ADDRH  =  8;
-localparam REG_BANK2_ADDRL  =  9;
-localparam REG_BANK3_ADDRH  = 10;
-localparam REG_BANK3_ADDRL  = 11;
-localparam REG_TS_FREQ      = 12;
-localparam REG_ETH_RESETN   = 13;
+localparam REG_CAPTURE       =  0;
+localparam REG_STATUS        =  1;
+localparam REG_ETH_RESETN    =  2;
+localparam REG_FIFO_OVERFLOW =  3;
+localparam REG_BANK_SIZEH    =  4;
+localparam REG_BANK_SIZEL    =  5;
+localparam REG_BANK0_ADDRH   =  6;
+localparam REG_BANK0_ADDRL   =  7;
+localparam REG_BANK1_ADDRH   =  8;
+localparam REG_BANK1_ADDRL   =  9;
+localparam REG_BANK2_ADDRH   = 10;
+localparam REG_BANK2_ADDRL   = 11;
+localparam REG_BANK3_ADDRH   = 12;
+localparam REG_BANK3_ADDRL   = 13;
+localparam REG_TS_FREQ       = 14;
 //==========================================================================
 
 
@@ -125,12 +132,19 @@ reg[1:0]    ashi_rresp;     // Output: Read-response (OKAY, DECERR, SLVERR);
 wire        ashi_ridle;     // Output: 1 = Read state machine is idle
 //==========================================================================
 
-// QSFP aligned-status signals, synchronous to clk
+// QSFP aligned-status signals, synchronized to clk
 wire[3:0] qsfp_status_sync;
 cdc_single i_pcs0_cdc(qsfp0_status_async, clk, qsfp_status_sync[0]);
 cdc_single i_pcs1_cdc(qsfp1_status_async, clk, qsfp_status_sync[1]);
 cdc_single i_pcs2_cdc(qsfp2_status_async, clk, qsfp_status_sync[2]);
 cdc_single i_pcs3_cdc(qsfp3_status_async, clk, qsfp_status_sync[3]);
+
+// Packet overflow signals, synchronized to clk
+wire[3:0] qsfp_overflow_sync;
+cdc_single i_ovf0_cdc(qsfp0_overflow_async, clk, qsfp_overflow_sync[0]);
+cdc_single i_ovf1_cdc(qsfp1_overflow_async, clk, qsfp_overflow_sync[1]);
+cdc_single i_ovf2_cdc(qsfp2_overflow_async, clk, qsfp_overflow_sync[2]);
+cdc_single i_ovf3_cdc(qsfp3_overflow_async, clk, qsfp_overflow_sync[3]);
 
 // Bank[n] calibration complete, synchronized to clk
 wire[3:0] calib_complete_sync;
@@ -165,7 +179,7 @@ assign led_l = ~qsfp_status_sync;
 //=============================================================================
 // Build a status word that can be read from an AXI register
 //=============================================================================
-wire[3:0] status_word =
+wire[7:0] status_word =
 {
     calib_complete_sync,
     qsfp_status_sync
@@ -264,6 +278,7 @@ always @(posedge clk) begin
             // Allow a read from any valid register                
             REG_CAPTURE:        ashi_rdata <= 0;
             REG_STATUS:         ashi_rdata <= status_word;
+            REG_FIFO_OVERFLOW:  ashi_rdata <= qsfp_overflow_sync;
 
             REG_BANK_SIZEH:     ashi_rdata <= RAM_BANK_SIZE[63:32];
             REG_BANK_SIZEL:     ashi_rdata <= RAM_BANK_SIZE[31:00];

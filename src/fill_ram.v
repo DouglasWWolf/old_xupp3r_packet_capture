@@ -19,9 +19,9 @@ module fill_ram #
 )
 (
     (* X_INTERFACE_INFO      = "xilinx.com:signal:clock:1.0 clk CLK"            *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF M_AXI, ASSOCIATED_RESET reset" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF M_AXI, ASSOCIATED_RESET resetn" *)
     input             clk,
-    input             reset,
+    input             resetn,
     output  reg[63:0] elapsed,
     output  reg       idle,
 
@@ -99,7 +99,7 @@ reg[63:0] write_ack_count;
 assign M_AXI_BREADY = 1;
 
 always @(posedge clk) begin
-    if (reset | start) 
+    if (resetn == 0 || start) 
         write_ack_count <= 0;
     else if (M_AXI_BREADY & M_AXI_BVALID)
         write_ack_count <= write_ack_count + 1;
@@ -119,7 +119,7 @@ reg       awsm_state;
 reg[31:0] aw_block_count;
 //-----------------------------------------------------------------------------
 always @(posedge clk) begin
-    if (reset) begin
+    if (resetn == 0) begin
         awsm_state    <= 0;
         M_AXI_AWVALID <= 0;
     end else case (awsm_state)
@@ -164,7 +164,7 @@ always @(posedge clk) begin
     // fill our bank of RAM with a constant    
     if (~idle) elapsed <= elapsed + 1;
     
-    if (reset) begin
+    if (resetn == 0) begin
         wsm_state    <= 0;
         M_AXI_WVALID <= 0;
         idle         <= 1;
